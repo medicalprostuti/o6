@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "তরলীকৃত প্রাকৃতিক গ্যাস কিসে সমৃদ্ধ?",
+          options: {
+            A: "Propane",
+            B: "Methane",
+            C: "Hexane",
+            D: "Butane",
+          },
+          correct: "B",
+          explanation:
+            "<p>তরলীকৃত প্রাকৃতিক গ্যাস (Liquefied Natural Gas - LNG) মূলত মিথেনে (CH₄) সমৃদ্ধ। প্রাকৃতিক গ্যাসের প্রধান উপাদানই হলো মিথেন, যা অত্যন্ত নিম্ন তাপমাত্রায় (-১৬২°C বা -২৬০°F) শীতল করে তরলে রূপান্তরিত করা হয় যাতে এটি সংরক্ষণ ও পরিবহন করা সহজ হয়।</p>",
+        },
+        {
+          id: 2,
+          question: "নিচের কোন গ্যাসটি রান্নার জন্য সিলিন্ডারে ব্যবহৃত হয়?",
+          options: {
+            A: "মিথেন ও বিউটেন",
+            B: "ইথেন ও মিথেন",
+            C: "মিথেন ও প্রোপেন",
+            D: "বিউটেন ও প্রোপেন",
+          },
+          correct: "D",
+          explanation:
+            "<p>রান্নার জন্য ব্যবহৃত সিলিন্ডার গ্যাস হলো তরলীকৃত পেট্রোলিয়াম গ্যাস (Liquefied Petroleum Gas - LPG)। এটি মূলত প্রোপেন (C₃H₈) এবং বিউটেন (C₄H₁₀) এর মিশ্রণ, যা উচ্চচাপে তরলীকৃত করে সিলিন্ডারে ভরা হয়।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "প্রাকৃতিক গ্যাসকে কত তাপমাত্রায় শীতল করলে LNG-তে রূপান্তরিত হয়?",
+          options: {
+            A: "-160°R",
+            B: "-150°C",
+            C: "+16°C",
+            D: "-160°C",
+          },
+          correct: "D",
+          explanation:
+            "<p>প্রাকৃতিক গ্যাসকে তরলীকৃত প্রাকৃতিক গ্যাসে (LNG) রূপান্তরিত করার জন্য অত্যন্ত নিম্ন তাপমাত্রায় শীতল করা হয়। এই তাপমাত্রা প্রায় -১৬২°C (-২৬০°F), যা মিথেনের স্ফুটনাঙ্কের কাছাকাছি। প্রদত্ত বিকল্পগুলির মধ্যে -১৬০°C সবচেয়ে কাছাকাছি এবং সঠিক উত্তর।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "LPG সিলিন্ডারের লিক শনাক্তের জন্য নিচের কোনটি ব্যবহৃত হয়?",
+          options: {
+            A: "CH₃SH",
+            B: "CHOH",
+            C: "CH₃OH",
+            D: "C₂H₅SH",
+          },
+          correct: "A",
+          explanation:
+            "<p>LPG গ্যাস গন্ধহীন হওয়ায় এর লিক শনাক্ত করা কঠিন। তাই নিরাপত্তা নিশ্চিত করার জন্য এর সাথে তীব্র গন্ধযুক্ত পদার্থ যোগ করা হয়। ইথাইল মারক্যাপটান (Ethyl mercaptan, C₂H₅SH) এবং মিথাইল মারক্যাপটান (Methyl mercaptan, CH₃SH) এই উদ্দেশ্যে ব্যবহৃত হয়। বিকল্পগুলির মধ্যে (a) CH₃SH (মিথাইল মারক্যাপটান) এবং (d) C₂H₅SH (ইথাইল মারক্যাপটান) উভয়ই সঠিক। তবে, সাধারণত ইথাইল মারক্যাপটান বেশি ব্যবহৃত হয়। এখানে (a) একটি সঠিক বিকল্প।</p>",
+        },
+        {
+          id: 5,
+          question: "CNG স্টেশনে ব্যবহৃত প্রাকৃতিক গ্যাসে মিথেনের পরিমাণ কত?",
+          options: {
+            A: "79%",
+            B: "88%",
+            C: "90%",
+            D: "96%",
+          },
+          correct: "D",
+          explanation:
+            "<p>কম্প্রেসড প্রাকৃতিক গ্যাস (Compressed Natural Gas - CNG) হলো মূলত উচ্চচাপে সংকুচিত প্রাকৃতিক গ্যাস। প্রাকৃতিক গ্যাসের প্রধান উপাদান হলো মিথেন, এবং CNG তে মিথেনের পরিমাণ সাধারণত ৯৩-৯৯% এর মধ্যে থাকে। প্রদত্ত বিকল্পগুলির মধ্যে ৯৬% এই সীমার মধ্যে পড়ে এবং এটি একটি সাধারণ গড় মান।</p>",
+        },
+        {
+          id: 6,
+          question: "He এর উৎক্রম তাপমাত্রা কত?",
+          options: {
+            A: "240°C",
+            B: "80°C",
+            C: "-80°C",
+            D: "-240°C",
+          },
+          correct: "D",
+          explanation:
+            "<p>উৎক্রম তাপমাত্রা (Inversion Temperature) হলো সেই তাপমাত্রা যেখানে গ্যাসকে থ্রোটলিং প্রক্রিয়ায় প্রসারিত করলে তার তাপমাত্রা হ্রাস বা বৃদ্ধি হওয়া শুরু করে। হিলিয়াম (He) এর উৎক্রম তাপমাত্রা খুবই কম, প্রায় -২৩৯.৭°C বা -২৪০°C। এর অর্থ হলো, এই তাপমাত্রার উপরে হিলিয়ামকে প্রসারিত করলে তার তাপমাত্রা বৃদ্ধি পায়, এবং এই তাপমাত্রার নিচে প্রসারিত করলে তাপমাত্রা হ্রাস পায়।</p>",
+        },
+        {
+          id: 7,
+          question: "CO₂ গ্যাসের সন্ধিচাপ বা ক্রান্তিচাপ কত atm?",
+          options: {
+            A: "31.1",
+            B: "72.9",
+            C: "76",
+            D: "760",
+          },
+          correct: "B",
+          explanation:
+            "<p>সন্ধিচাপ (Critical Pressure, P<sub>c</sub>) হলো সেই চাপ যা সন্ধি তাপমাত্রায় একটি গ্যাসকে তরল করার জন্য প্রয়োজন হয়। কার্বন ডাই অক্সাইড (CO₂) এর সন্ধিচাপ প্রায় ৭২.৯ atm (বা ৭৩ atm)। এর সন্ধি তাপমাত্রা হলো ৩১.১°C।</p>",
+        },
+        {
+          id: 8,
+          question: "একটি গ্যাসকে সহজে তরল করা যায় যখন এর-",
+          options: {
+            A: "Z = 1",
+            B: "Z = 1.5",
+            C: "Z = 0.17",
+            D: "Z = 0",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি গ্যাসকে সহজে তরল করা যায় যখন তার অণুগুলির মধ্যে আন্তঃআণবিক আকর্ষণ বল বেশি থাকে। সংকোচনশীলতা গুণাঙ্ক (Z) এর মান ১ এর চেয়ে কম (Z < 1) হলে এটি নির্দেশ করে যে গ্যাসটি আদর্শ গ্যাসের চেয়ে বেশি সংকুচিত হচ্ছে, যা শক্তিশালী আন্তঃআণবিক আকর্ষণ বলের কারণে ঘটে। যত কম Z এর মান, বিশেষ করে যখন এটি ১ থেকে দূরে থাকে (০.১৭ ১ এর চেয়ে অনেক কম), তত বেশি গ্যাসটি সংকোচনযোগ্য এবং সহজে তরলীকরণযোগ্য। Z = 1 আদর্শ গ্যাসের জন্য, Z > 1 হলে গ্যাস কম সংকোচনযোগ্য। Z = 0 অবাস্তব।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "তিনটি গ্যাস A, B এবং C এর সন্ধি তাপমাত্রা যথাক্রমে 31°C, -57°C এবং -80°C। কক্ষ তাপমাত্রা 30°C হলে কোন গ্যাসটি সবচেয়ে সহজে তরল হয়?",
+          options: {
+            A: "A",
+            B: "B",
+            C: "C",
+            D: "কোনোটিই নয়",
+          },
+          correct: "A",
+          explanation:
+            "<p>যে গ্যাসের সন্ধি তাপমাত্রা (Critical Temperature, T<sub>c</sub>) যত বেশি, তাকে তত সহজে তরল করা যায়। এর কারণ হলো, সন্ধি তাপমাত্রা হলো সেই সর্বোচ্চ তাপমাত্রা যার উপরে কোনো চাপ প্রয়োগ করে গ্যাসকে তরল করা সম্ভব নয়।</p><p>প্রদত্ত গ্যাসগুলির সন্ধি তাপমাত্রা হলো:</p><ul><li>গ্যাস A: 31°C</li><li>গ্যাস B: -57°C</li><li>গ্যাস C: -80°C</li></ul><p>কক্ষ তাপমাত্রা ৩০°C। এই তাপমাত্রায়:</p><ul><li>গ্যাস A এর সন্ধি তাপমাত্রা (৩১°C) কক্ষ তাপমাত্রার (৩০°C) চেয়ে সামান্য বেশি। এর মানে হলো, কক্ষ তাপমাত্রায় গ্যাস A কে চাপ প্রয়োগ করে তরল করা সম্ভব।</li><li>গ্যাস B এবং C এর সন্ধি তাপমাত্রা কক্ষ তাপমাত্রার চেয়ে অনেক কম। তাই কক্ষ তাপমাত্রায় এই গ্যাসগুলিকে কোনো চাপ প্রয়োগ করে তরল করা সম্ভব নয়, কারণ তারা তাদের সন্ধি তাপমাত্রার উপরে রয়েছে।</li></ul><p>সুতরাং, গ্যাস A সবচেয়ে সহজে তরল হবে, কারণ এটি কক্ষ তাপমাত্রায় তার সন্ধি তাপমাত্রার নিচে বা কাছাকাছি।</p>",
+        },
+        {
+          id: 10,
+          question: "কোনটি সবচেয়ে বেশি শক্তি উৎপাদনকারী?",
+          options: {
+            A: "CNG",
+            B: "LNG",
+            C: "LPG",
+            D: "গ্যাসোলিন",
+          },
+          correct: "C",
+          explanation:
+            "<p>এই প্রশ্নটি নির্দিষ্ট ইউনিট বা ভরের উপর ভিত্তি করে না বলা পর্যন্ত কিছুটা অস্পষ্ট। তবে, যদি 'শক্তি উৎপাদনকারী' বলতে প্রতি ইউনিটে শক্তি ঘনত্ব বা ক্যালরিফিক ভ্যালু বোঝায়:</p><ul><li><strong>LPG (Liquefied Petroleum Gas):</strong> এর ক্যালরিফিক ভ্যালু (তাপীয় মান) সাধারণত CNG এবং LNG এর চেয়ে বেশি। প্রতি কিলোগ্রামে এর শক্তি ঘনত্ব প্রায় ৪৬.১ MJ/kg।</li><li><strong>CNG (Compressed Natural Gas):</strong> এর ক্যালরিফিক ভ্যালু প্রায় ৫০ MJ/kg, কিন্তু এর শক্তি ঘনত্ব তুলনামূলকভাবে কম কারণ এটি গ্যাসীয় অবস্থায় থাকে এবং সংরক্ষণ করা কঠিন।</li><li><strong>LNG (Liquefied Natural Gas):</strong> এর ক্যালরিফিক ভ্যালু CNG এর মতোই, কারণ উভয়ই মূলত মিথেন। তবে এটি তরল হওয়ায় এর শক্তি ঘনত্ব CNG এর চেয়ে বেশি।</li><li><strong>গ্যাসোলিন:</strong> সাধারণত প্রতি কিলোগ্রামে LPG এর চেয়ে বেশি শক্তি দেয় (প্রায় ৪৬.৪ MJ/kg), তবে দহনের দক্ষতা এবং পরিবেশগত প্রভাবের দিক থেকে এটি ভিন্ন।</li></ul><p>প্রশ্নে যেহেতু শুধু 'শক্তি উৎপাদনকারী' বলা হয়েছে, এবং সাধারণ ব্যবহারের পরিপ্রেক্ষিতে দেখা হয়, LPG (প্রোপেন ও বিউটেন) তার উচ্চ শক্তি ঘনত্বের কারণে প্রায়শই সবচেয়ে বেশি শক্তি উৎপাদনকারী হিসেবে বিবেচিত হয়, বিশেষ করে আয়তনের ভিত্তিতে। তবে, যদি ভরের ভিত্তিতে দেখা হয়, মিথেন (CNG/LNG) বা গ্যাসোলিনের মান কাছাকাছি বা বেশি হতে পারে। এখানে, LPG জ্বালানির উৎস হিসেবে এর দক্ষতা ও শক্তি ঘনত্বের জন্য পরিচিত।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "কোন জ্বালানিতে উপস্থিত হাইড্রোকার্বনটি সবচেয়ে বেশি আণবিক ভরের?",
+          options: {
+            A: "CNG",
+            B: "LNG",
+            C: "LPG",
+            D: "গ্যাসোলিন",
+          },
+          correct: "D",
+          explanation:
+            "<p>বিভিন্ন জ্বালানিতে উপস্থিত প্রধান হাইড্রোকার্বনগুলি এবং তাদের আণবিক ভর:</p><ul><li><strong>CNG (Compressed Natural Gas) ও LNG (Liquefied Natural Gas):</strong> প্রধানত মিথেন (CH₄), আণবিক ভর ~১৬ গ্রাম/মোল।</li><li><strong>LPG (Liquefied Petroleum Gas):</strong> প্রধানত প্রোপেন (C₃H₈) ও বিউটেন (C₄H₁₀), আণবিক ভর যথাক্রমে ~৪৪ গ্রাম/মোল ও ~৫৮ গ্রাম/মোল।</li><li><strong>গ্যাসোলিন (Petrol):</strong> বিভিন্ন হাইড্রোকার্বনের মিশ্রণ, যার মধ্যে সাধারণত C₅ থেকে C₁₂ পর্যন্ত হাইড্রোকার্বন (যেমন হেপ্টেন, অকটেন) থাকে। এদের আণবিক ভর LPG এর হাইড্রোকার্বনের চেয়ে উল্লেখযোগ্যভাবে বেশি হতে পারে (যেমন, অকটেন C₈H₁₈ এর আণবিক ভর ১১৪ গ্রাম/মোল)।</li></ul><p>সুতরাং, গ্যাসোলিনে উপস্থিত হাইড্রোকার্বনগুলির আণবিক ভর সবচেয়ে বেশি হয়।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "সবচেয়ে মূল্য সাশ্রয়ী এবং গ্রীন হাউজ গ্যাস মুক্ত জ্বালানি কোনটি?",
+          options: {
+            A: "CNG",
+            B: "LNG",
+            C: "LPG",
+            D: "গ্যাসোলিন",
+          },
+          correct: "A",
+          explanation:
+            "<p>এই প্রশ্নটিতে দুটি শর্ত রয়েছে: 'মূল্য সাশ্রয়ী' এবং 'গ্রীন হাউজ গ্যাস মুক্ত'।</p><ul><li><strong>গ্রীন হাউজ গ্যাস মুক্ত:</strong> কোনো জ্বালানিই সম্পূর্ণরূপে গ্রীন হাউজ গ্যাস মুক্ত নয়, কারণ সবগুলিই দহনের সময় কার্বন ডাই অক্সাইড (CO₂) উৎপাদন করে। তবে, প্রাকৃতিক গ্যাস (CNG/LNG) এবং LPG, গ্যাসোলিন ও ডিজেলের তুলনায় কম কার্বন ডাই অক্সাইড এবং অন্যান্য দূষণকারী গ্যাস (যেমন সালফার ডাই অক্সাইড) নির্গত করে। মিথেন (CNG/LNG এর প্রধান উপাদান) কার্বন পরমাণুর সংখ্যা কম হওয়ায় এটি প্রতি ইউনিট শক্তিতে কম CO₂ উৎপাদন করে।</li><li><strong>মূল্য সাশ্রয়ী:</strong> বিভিন্ন দেশে জ্বালানির মূল্য ভিন্ন হয়। তবে, সাধারণত প্রাকৃতিক গ্যাস (CNG/LNG) ঐতিহ্যবাহী পেট্রোল বা ডিজেলের চেয়ে কম দামে পাওয়া যায়। CNG এর ক্ষেত্রে সংকুচিত করার জন্য অবকাঠামোগত খরচ থাকলেও, প্রতি ইউনিট শক্তিতে এর খরচ কম হতে পারে।</li></ul><p>এই দুটি শর্তের সমন্বয়ে, CNG প্রায়শই সবচেয়ে পরিবেশ-বান্ধব এবং তুলনামূলকভাবে সাশ্রয়ী বিকল্প হিসেবে বিবেচিত হয়, বিশেষ করে পরিবহন খাতে। যদিও এটি সম্পূর্ণরূপে 'গ্রীন হাউজ গ্যাস মুক্ত' নয়, তবে এটি অন্যান্য জীবাশ্ম জ্বালানির তুলনায় অনেক কম নির্গমন করে।</p>",
+        },
+        {
+          id: 13,
+          question: "প্রাকৃতিক গ্যাসের প্রধান উপাদান কোনটি?",
+          options: {
+            A: "N₂",
+            B: "O₂",
+            C: "H₂",
+            D: "CH₄",
+          },
+          correct: "D",
+          explanation:
+            "<p>প্রাকৃতিক গ্যাসের প্রধান উপাদান হলো মিথেন (CH₄)। এটি সাধারণত ৭০% থেকে ৯০% বা তার বেশি পরিমাণ থাকে। এছাড়াও প্রাকৃতিক গ্যাসে ইথেন, প্রোপেন, বিউটেন এবং অল্প পরিমাণে অন্যান্য হাইড্রোকার্বন ও কিছু অ-হাইড্রোকার্বন গ্যাস (যেমন নাইট্রোজেন, কার্বন ডাই অক্সাইড) থাকতে পারে।</p>",
+        },
+        {
+          id: 14,
+          question: "নিম্নের কোন তাপমাত্রায় CO₂ গ্যাস তরল হয় না?",
+          options: {
+            A: "31.1°C",
+            B: "28.5°C",
+            C: "32°C",
+            D: "30°C",
+          },
+          correct: "C",
+          explanation:
+            "<p>কার্বন ডাই অক্সাইডের (CO₂) সন্ধি তাপমাত্রা (Critical Temperature, T<sub>c</sub>) হলো ৩১.১°C। সন্ধি তাপমাত্রা হলো সেই সর্বোচ্চ তাপমাত্রা যার উপরে কোনো চাপ প্রয়োগ করে গ্যাসকে তরল করা সম্ভব নয়।</p><p>যদি তাপমাত্রা ৩১.১°C এর উপরে হয়, তবে CO₂ গ্যাসকে তরল করা যাবে না, সে যতই চাপ প্রয়োগ করা হোক না কেন। প্রদত্ত বিকল্পগুলির মধ্যে ৩২°C হলো ৩১.১°C এর চেয়ে বেশি তাপমাত্রা। অতএব, ৩২°C তাপমাত্রায় CO₂ গ্যাস তরল হয় না।</p>",
+        },
+        {
+          id: 15,
+          question: "CO₂ এর সন্ধি তাপমাত্রা কত?",
+          options: {
+            A: "31.1°C",
+            B: "72.9°C",
+            C: "-118.80°C",
+            D: "118.80°C",
+          },
+          correct: "A",
+          explanation:
+            "<p>কার্বন ডাই অক্সাইড (CO₂) এর সন্ধি তাপমাত্রা (Critical Temperature, T<sub>c</sub>) হলো ৩১.১°C। এটি সেই তাপমাত্রা যার উপরে CO₂কে তরল করা সম্ভব নয়, যতই চাপ প্রয়োগ করা হোক না কেন।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "H₂O, O₂, N₂, CH₄ এবং NH₃ গ্যাসের ভ্যানডার ওয়ালস ধ্রুবক 'a' এর মান যথাক্রমে 0.24, 1.36, 1.39, 2.25 এবং 4.17 atm L² mol⁻²। কোন গ্যাসটি সবচেয়ে সহজে তরলীকরণ করা যাবে?",
+          options: {
+            A: "CH₄",
+            B: "O₂",
+            C: "N₂",
+            D: "NH₃",
+          },
+          correct: "D",
+          explanation:
+            "<p>ভ্যান্ডার ওয়ালস ধ্রুবক 'a' আন্তঃআণবিক আকর্ষণ বলের তীব্রতার পরিমাপক। যে গ্যাসের 'a' এর মান যত বেশি, তার অণুগুলির মধ্যে আকর্ষণ বল তত বেশি। শক্তিশালী আন্তঃআণবিক আকর্ষণ বলের কারণে গ্যাসকে তত সহজে তরলীকরণ করা যায়।</p><p>প্রদত্ত 'a' এর মানগুলি হলো:</p><ul><li>H₂O: ০.২৪</li><li>O₂: ১.৩৬</li><li>N₂: ১.৩৯</li><li>CH₄: ২.২৫</li><li>NH₃: ৪.১৭</li></ul><p>এই গ্যাসগুলির মধ্যে অ্যামোনিয়া (NH₃) এর 'a' এর মান (৪.১৭) সর্বোচ্চ, যা নির্দেশ করে যে এর অণুগুলির মধ্যে আন্তঃআণবিক আকর্ষণ বল সবচেয়ে শক্তিশালী (হাইড্রোজেন বন্ধন গঠনের কারণে)। সুতরাং, NH₃ কে সবচেয়ে সহজে তরলীকরণ করা যাবে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                              <label class="option" data-option="${option}">
+                                                <div class="circle">${option}</div>
+                                                <span class="option-text">${question.options[option]}</span>
+                                              </label>
+                                            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                 <div class="explanation-content">
+                                                   <div class="explanation-label">ব্যাখ্যা:</div>
+                                                   ${question.explanation}
+                                                 </div>
+                                               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                            <p class="question-label">${
+                                              index + 1
+                                            }. ${question.question}</p>
+                                            <div class="options">
+                                              ${optionsHTML}
+                                            </div>
+                                            ${explanationHTML}
+                                          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
